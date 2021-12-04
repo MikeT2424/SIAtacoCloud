@@ -29,8 +29,8 @@ import tacos.data.TacoRepository;
 public class DesignTacoController {
 
   private final IngredientRepository ingredientRepo;
+  //Update
 
-  //end::injectingIngredientRepository[]
   private TacoRepository tacoRepo;
 
   @Autowired
