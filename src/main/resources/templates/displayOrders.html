@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" 
+      xmlns:th="http://www.thymeleaf.org">
+	
+	<head>
+		<title>Taco Cloud</title>
+    	<link rel="stylesheet" th:href="@{/styles.css}" />
+	</head>
+	
+	<body>
+		<h1>Existing Orders:</h1>
+
+			<!-- To access all of the data in the view, the tacos have to be in the scope of the orders and the ingredients in the scope of the tacos. -->
+			<table th:each="order : ${orders}"  width = "1200" cellpadding = "2" cellspacing = "2" border = "2">
+
+				<tr bgcolor="#99ccff">
+					<th th:text="${order.id}">ORDER</th>
+					<th th:text="${order.deliveryName}">ORDER</th>
+					<th th:text="${order.deliveryStreet}">ORDER</th>
+					<th th:text="${order.deliveryCity}">ORDER</th>
+					<th th:text="${order.deliveryState}">ORDER</th>
+					<th th:text="${order.deliveryZip}">ORDER</th>
+				</tr>
+				
+				<tr th:each="taco : ${order.tacos}"  bgcolor='#ffcc66'>
+					<td th:text="${taco.id}">TACO</td>
+					<td th:text="${taco.name}">TACO</td>
+					<td th:text="${taco.createdAt}">TACO</td>
+					<td th:each="ingredient : ${taco.ingredients}" bgcolor="#99ff99">
+						<div th:text="${ingredient.name}">INGREDIENT</div> <!-- This would not work in a separate row, must be in within the tacos list. -->
+					</td> 
+				</tr>
+			<br>	
+			</table>
+			
+			<a th:href="@{/}" id="home">Home</a>
+
+	</body>
+</html>
