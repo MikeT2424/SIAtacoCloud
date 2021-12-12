@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import tacos.data.UserRepository;
 
+
+//Mark this as a controller with the 'register' path.
 @Controller
 @RequestMapping("/register")
 public class RegistrationController {
@@ -19,15 +21,18 @@ public class RegistrationController {
     this.passwordEncoder = passwordEncoder;
   }
   
+  //Map the 'registration' form
   @GetMapping
   public String registerForm() {
     return "registration";
   }
   
+  //Save the data to the database in the User table. The toUser() method will send the data from the registration form, passing in the passwordEncoder.
   @PostMapping
   public String processRegistration(RegistrationForm form) {
-    userRepo.save(form.toUser(passwordEncoder));
+	//The passwordEncoder is the @Bean declared in SecurityConfig.java.
+	// A Bean is an instance of a class managed by the Spring container.
+    userRepo.save(form.toUser(passwordEncoder)); 
     return "redirect:/login";
   }
-
 }

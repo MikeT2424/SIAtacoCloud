@@ -1,17 +1,24 @@
+//tag::securityConfigOuterClass[]
 package tacos.security;
+
+import org.springframework.context.annotation.Bean;
+//end::securityConfigOuterClass[]
+//tag::baseBonesImports[]
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web
+                        .configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web
+                        .configuration.WebSecurityConfigurerAdapter;
+//end::baseBonesImports[]
 
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.sql.DataSource;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation
+             .authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web
+             .builders.HttpSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
@@ -20,67 +27,194 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder;
 import org.springframework.security.crypto.password.StandardPasswordEncoder;
 import org.springframework.security.crypto.scrypt.SCryptPasswordEncoder;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
+//tag::securityConfigOuterClass[]
 
+@SuppressWarnings("deprecation")
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig extends WebSecurityConfigurerAdapter{
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+  
+//end::securityConfigOuterClass[]
 
-	@Autowired
-	private UserDetailsService userDetailsService;
-	
-	@Bean
-    public PasswordEncoder encoder() {
-		
-		//The following is a Map of different encoder formats both old and new which allows for the use of any one we choose.
-		//This addresses the need for future upgrades in the Spring password encryption format, and better encryption algorithms. 
-	    String idForEncode = "bcrypt";
-	    Map<String,PasswordEncoder> encoders = new HashMap<>();
-	    encoders.put(idForEncode, new BCryptPasswordEncoder());
-	    encoders.put("noop", NoOpPasswordEncoder.getInstance());
-	    encoders.put("pbkdf2", new Pbkdf2PasswordEncoder());
-	    encoders.put("scrypt", new SCryptPasswordEncoder()); 
-	    encoders.put("sha256", new StandardPasswordEncoder());
+//tag::customUserDetailsService[]
+  @Autowired
+  private UserDetailsService userDetailsService;
+  
+//end::customUserDetailsService[]
 
-	    //Because we are passing 'idForEncode' as the String argument the BCryptPasswordEncoder() algorithm will be used.
-	    //A different algorithm could be used by passing one of the other Strings.
-	    PasswordEncoder passwordEncoder = new DelegatingPasswordEncoder(idForEncode, encoders);
-		
-      return passwordEncoder;
-    }
+  //tag::configureHttpSecurity[]
+  //tag::authorizeRequests[]
+  //tag::customLoginPage[]
+  @Override
+  protected void configure(HttpSecurity http) throws Exception {
+    http
+//    .csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) // For use with REST.
+//    .and()
+      .authorizeRequests()
+      	.antMatchers("/design", "/orders").access("hasRole('ROLE_USER')") //Allow access for 'ROLE_USER' users to the design and orders pages.
+      	.antMatchers("/", "/**").access("permitAll") // Allow access to non authenticated users to the home screen. NOTE this should come after the above or it would have no effect.
+      	.and().formLogin().loginPage("/login") //Specifies the custom login page to be used for the application. This is declared in WebConfig because it is a simple page.
+      	.and().logout().logoutSuccessUrl("/") //Specifies the page directed to when the user logs out. The session is cleared when logging out.
+      	.and().csrf().ignoringAntMatchers("/h2-console/**")
+      	.and().headers().frameOptions().sameOrigin();
+  }
+//end::configureHttpSecurity[]
+//end::authorizeRequests[]
+//end::customLoginPage[]
 
-	
-    @Override //used for the HttpSecurity method.
-    protected void configure(HttpSecurity http) throws Exception{
-		
-		 http
-         .authorizeRequests()
-         .antMatchers("/design", "/orders")
-	     .access("hasRole('ROLE_USER')")
-	     .antMatchers("/", "/**").access("permitAll")
-	     .and()
-	     .formLogin()
-	     .loginPage("/login")
-	     .and()
-	     .logout()
-	     .logoutSuccessUrl("/")
-	     .and()
-	     .csrf()
-	     .ignoringAntMatchers("/h2-console/**")
-	     .and()  
-	     .headers()
-	     .frameOptions()
-	     .sameOrigin();
-	}
+  /*
+  //tag::customUserDetailsService[]
+  @Override
+  protected void configure(AuthenticationManagerBuilder auth)
+      throws Exception {
+
+    auth
+      .userDetailsService(userDetailsService);
     
-	
-    
-    @Override
-	protected void configure(AuthenticationManagerBuilder auth)
-	      throws Exception {
+  }
+  //end::customUserDetailsService[]
+  
+   */
 
-	    auth
-	      .userDetailsService(userDetailsService)
-	      .passwordEncoder(encoder());// This does not pass the return value of encoder(), it passes the Bean instance marked above as Password encoder.
-    }
+  //tag::customUserDetailsService_withPasswordEncoder[]
+  
+  @Bean
+  public PasswordEncoder encoder() {
+	  
+	  String idForEncode = "bcrypt";
+	  Map<String,PasswordEncoder> encoders = new HashMap<>();
+	  encoders.put(idForEncode, new BCryptPasswordEncoder());
+	  encoders.put("noop", NoOpPasswordEncoder.getInstance());
+	  encoders.put("pbkdf2", new Pbkdf2PasswordEncoder());
+	  encoders.put("scrypt", new SCryptPasswordEncoder());
+	  encoders.put("sha256", new StandardPasswordEncoder());
+
+	  PasswordEncoder passwordEncoder = new DelegatingPasswordEncoder(idForEncode, encoders);
+	  
+	  return passwordEncoder;
+  }
+  
+//  @Bean
+//  public PasswordEncoder encoder() {
+//    return new StandardPasswordEncoder("53cr3t");
+//  }
+  
+  
+  @Override
+  protected void configure(AuthenticationManagerBuilder auth)
+      throws Exception {
+
+    auth
+      .userDetailsService(userDetailsService)
+      .passwordEncoder(encoder());
+    
+  }
+  //end::customUserDetailsService_withPasswordEncoder[]
+  
+//
+// IN MEMORY AUTHENTICATION EXAMPLE
+//
+/*
+//tag::configureAuthentication_inMemory[]
+  @Override
+  protected void configure(AuthenticationManagerBuilder auth)
+      throws Exception {
+    
+    auth
+      .inMemoryAuthentication()
+        .withUser("buzz")
+          .password("infinity")
+          .authorities("ROLE_USER")
+        .and()
+        .withUser("woody")
+          .password("bullseye")
+          .authorities("ROLE_USER");
+    
+  }
+//end::configureAuthentication_inMemory[]
+*/
+
+//
+// JDBC Authentication example
+//
+/*
+//tag::configureAuthentication_jdbc[]
+  @Autowired
+  DataSource dataSource;
+  
+  @Override
+  protected void configure(AuthenticationManagerBuilder auth)
+      throws Exception {
+    
+    auth
+      .jdbcAuthentication()
+        .dataSource(dataSource);
+    
+  }
+//end::configureAuthentication_jdbc[]
+*/
+
+/*
+//tag::configureAuthentication_jdbc_withQueries[]
+  @Override
+  protected void configure(AuthenticationManagerBuilder auth)
+      throws Exception {
+    
+    auth
+      .jdbcAuthentication()
+        .dataSource(dataSource)
+        .usersByUsernameQuery(
+            "select username, password, enabled from Users " +
+            "where username=?")
+        .authoritiesByUsernameQuery(
+            "select username, authority from UserAuthorities " +
+            "where username=?");
+    
+  }
+//end::configureAuthentication_jdbc_withQueries[]
+*/
+
+/*
+//tag::configureAuthentication_jdbc_passwordEncoder[]
+  @Override
+  protected void configure(AuthenticationManagerBuilder auth)
+      throws Exception {
+    
+    auth
+      .jdbcAuthentication()
+        .dataSource(dataSource)
+        .usersByUsernameQuery(
+            "select username, password, enabled from Users " +
+            "where username=?")
+        .authoritiesByUsernameQuery(
+            "select username, authority from UserAuthorities " +
+            "where username=?")
+        .passwordEncoder(new StandardPasswordEncoder("53cr3t");
+    
+  }
+//end::configureAuthentication_jdbc_passwordEncoder[]
+*/
+  
+  
+//
+// LDAP Authentication example
+//
+/*
+//tag::configureAuthentication_ldap[]
+  @Override
+  protected void configure(AuthenticationManagerBuilder auth)
+      throws Exception {
+    auth
+      .ldapAuthentication()
+        .userSearchFilter("(uid={0})")
+        .groupSearchFilter("member={0}");
+  }
+//end::configureAuthentication_ldap[]
+*/
+  
+//tag::securityConfigOuterClass[]
+
 }
+//end::securityConfigOuterClass[]
