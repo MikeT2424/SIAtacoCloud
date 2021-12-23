@@ -1,3 +1,41 @@
 server:
   port: 8082
+  #This config for ssl will set up the applcation to use HTTPS requests:
+#  ssl:
+#    # If the keystore file is in the jar file a classpath URL would be used instead of this file path.
+#    key-store: file:////path/to/mykeys.jks
+#    key-store-password: letmein
+#    key-password: letmein
+
+#Set a property named greeting.welcome to echo the name of the spring application:
+greeting:
+  welcome: You are using ${spring.application.name}
+ 
+#spring:
+#  datasource:
+#    username: mike
+#    password: tacopass
+#    driver-class-name: com.mysql.jdbc.Driver
+#    #Sprinb will use this property to configure the Datasource bean
+#    #Another way to configure the scripts to run when Spring starts to intialize the database:
+#    schema:
+#      - order-schema.sql
+#      - ingredient-schema.sql
+#      - taco-schema.sql
+#      - user-schema.sql
+#    data:
+#      - ingredients.sql
+#    #Or you can configure your datasource in JNDI
+#    jndi-name: java:/comp/env/jdbc/tacoCloudDS
+
+logging:
+  #Set the logging file with these properties:
+  file:      path: src/main/resources/logs
+    file: TacoCloud.log
+    #To set the root logging level to WARN but security logs to DEBUG: 
+  level:    root: INFO
+    org.springframework.security: DEBUG 
+
+        
+            
   
